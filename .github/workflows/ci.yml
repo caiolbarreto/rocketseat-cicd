@@ -23,7 +23,11 @@ jobs:
       with:
         node-version: 20
         cache: 'yarn'
-    - run: yarn
+
+    - name: Enable corepack
+      run: corepack enable
+
+    - run: yarn install --immutable
     - run: yarn run test
 
     - name: Semantic release
@@ -47,14 +51,14 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build
+    - name: Build docker image
       id: build-docker-image
       env:
         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         TAG: ${{ steps.generate_tag.outputs.sha }}
       run: |
         docker build -t $REGISTRY/rocketseat-ci:$TAG .
-        docker tag -t $REGISTRY/rocketseat-ci:$TAG $REGISTRY/rocketseat-ci:latest
+        docker tag $REGISTRY/rocketseat-ci:$TAG $REGISTRY/rocketseat-ci:latest
         docker push --all-tags $REGISTRY/rocketseat-ci
         IMAGE=$(echo $REGISTRY/rocketseat-ci:$TAG)
         echo "image=$IMAGE" >> $GITHUB_OUTPUT
